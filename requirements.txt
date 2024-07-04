@@ -1,0 +1,6 @@
+Flask
+flask_sqlalchemy
+pytz
+pandas
+joblib
+numpy
