@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 import joblib
+import config
 
 # データの読み込み
 df = pd.read_csv('data/BostonHousing.csv',encoding='shift-jis')
 # 目的変数
-y = df[["medv"]]
-X = df.drop(y.columns, axis=1)
+y = df[config.TARGET]
+X = df[config.COLUMNS]
 
 # データの分割
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)

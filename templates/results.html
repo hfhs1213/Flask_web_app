@@ -10,10 +10,10 @@
     {% for post in posts %}
     <article>
         <hr>
-        <h2>結果 {{ loop.index }} 回目</h2>
+        <h2>結果 {{ post.id }} 回目</h2>
         <p>予測値：{{ post.value }}</p>
         <p>作成日時 : {{ post.created_at }}</p>
-        <a href="/{{post.id}}/delete" role="button">削除</a>
+        <a href="/{{post.id}}/delete">削除</a>
     </article>
     <hr>
     {% endfor %}

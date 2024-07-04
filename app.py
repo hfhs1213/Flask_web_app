@@ -6,6 +6,7 @@ import pytz
 import pandas as pd
 import numpy as np
 import joblib
+import config
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///params.db"
@@ -14,8 +15,9 @@ db = SQLAlchemy(app)
 # カラムの取り出し
 df = pd.read_csv('data/BostonHousing.csv',encoding='shift-jis')
 # 目的変数
-y = df[["medv"]]
-X = df.drop(y.columns, axis=1)
+y = df[config.TARGET]
+# X = df.drop(y.columns, axis=1)
+X = df[config.COLUMNS]
 col_names = X.columns
 
 def predict(parameters):
@@ -31,46 +33,45 @@ class Post(db.Model):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == "GET":
-        posts = Post.query.all()
-        return render_template("index.html", posts=posts)
+    # /の場合はindex.htmlを表示させる
+    return render_template("index.html")
 
 @app.route("/create", methods=["GET", "POST"])
 def create():
     if request.method == "POST":
-        crim = request.form.get("crim")
-        zn = request.form.get("zn")
-        indus = request.form.get("indus")
-        chas = request.form.get("chas")
-        nox = request.form.get("nox")
-        rm = request.form.get("rm")
-        age = request.form.get("age")
-        dis = request.form.get("dis")
-        rad = request.form.get("rad")
-        tax = request.form.get("tax")
-        ptratio = request.form.get("ptratio")
-        b = request.form.get("b")
-        lstat = request.form.get("lstat")
-
-        x = np.array([crim, zn, indus, chas, nox, rm, 
-                    age, dis, rad, tax, ptratio, b, lstat])
+        # POST(value送信)の場合は推論して/にredirectする
+        pred_list = []
+        for col in col_names:
+            # 入力フォームに値が入力されていることを確認
+            if request.form.get(col) == "":
+                return redirect("/create")
+            pred_value = request.form.get(col)
+            pred_list.append(pred_value)
+        x = np.array(pred_list)
         pred = predict(x)
 
-        post = Post(value=pred)
+        # 予測をしたのでDBを更新する
+        post = Post()  # インスタンス化
+        post.value = pred
+        post.created_at = datetime.now(pytz.timezone("Asia/Tokyo"))
         db.session.add(post)
         db.session.commit()
         return redirect("/")
     else:
+        # GET(画面表示)の場合はcreate.htmlを表示するだけ
         return render_template("/create.html", col_names=col_names)
 
 @app.route('/<int:id>/delete', methods=["GET"])
 def delete(id):
+    # 削除するidを取得してDBから削除する
     post = Post.query.get(id)
     db.session.delete(post)
     db.session.commit()
-    return render_template("/results.html")
+    # 削除後は/resultsにルーティングする
+    return redirect("/results")
 
 @app.route("/results")
 def results():
+    # 結果画面はGETしかないのでDBを更新して表示する
     posts = Post.query.all()
     return render_template("/results.html", posts=posts)
