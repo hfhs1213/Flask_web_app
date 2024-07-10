@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import pytz
@@ -7,9 +7,11 @@ import pandas as pd
 import numpy as np
 import joblib
 import config
+import refit
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///params.db"
+app.secret_key = 'key'
 db = SQLAlchemy(app)
 
 # カラムの取り出し
@@ -27,9 +29,17 @@ def predict(parameters):
     return pred
 
 class Post(db.Model):
+    __tablename__ = 'post'
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(pytz.timezone("Asia/Tokyo")))
+
+class ModelResult(db.Model):
+    __tablename__ = 'model_result'
+    id = db.Column(db.Integer, primary_key=True)
+    model_name = db.Column(db.String, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(pytz.timezone("Asia/Tokyo")))
+    # 精度も保存したい
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -75,3 +85,31 @@ def results():
     # 結果画面はGETしかないのでDBを更新して表示する
     posts = Post.query.all()
     return render_template("/results.html", posts=posts)
+
+@app.route("/fit", methods=["GET", "POST"])
+def fit():
+    if request.method == "GET":
+        # /の場合はfit.htmlを表示させる
+        return render_template("fit.html")
+    else:
+        param = request.form.get('radio')
+        model_name = request.form.get('model_name')
+        print(model_name is None)
+        if model_name is "":
+            flash("モデル名を入力してください！")
+            return render_template("fit.html")
+        refit.fit_(X, y, param)
+        flash(f"モデル名:[{model_name}]の学習が完了しました。")
+        # DBに登録
+        model_result = ModelResult()  # インスタンス化
+        model_result.model_name = model_name
+        print(model_result.model_name)
+        print("aaaaaaaaaaaaaaaaaaa")
+        model_result.created_at = datetime.now(pytz.timezone("Asia/Tokyo"))
+        print("bbbbbb")
+        db.session.add(model_result)
+        print("ccccc")
+        db.session.commit()
+        print("ddd")
+        # 保存しただけなので表示したい
+        return render_template("fit.html")

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>学習画面</h1>
+    <hr>
+    <form method="POST">
+        <div class="container">
+            {% for message in get_flashed_messages() %}
+            <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+            {% block body %}{% endblock %}
+        </div>
+        <br>
+        <label for="ck">評価関数を設定</label>
+        <div>
+            <!-- checkを入れることでデフォルトとする -->
+            <input type="radio" name="radio" id="r1" value="rmse" checked>
+            <label for="r1">rmse</label>
+          </div>
+          <div>
+            <input type="radio" name="radio" id="r2" value="mse">
+            <label for="r2">mse</label>
+          </div>
+          <div>
+            <input type="radio" name="radio" id="r3" value="mape">
+            <label for="r3">mape</label>
+          </div>
+          <br>
+          <label for="ck">モデル名</label>
+          <br>
+          <input type="int" name="model_name" size="10"><br>
+        <br>
+        <button name="fit">学習実行</button>
+        <br><br>
+        <a href="/" role="button">戻る</a>
+    </form>
+</body>
+</html>

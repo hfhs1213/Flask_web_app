@@ -6,12 +6,12 @@
     <title>Document</title>
 </head>
 <body>
-    <h1>新規推論用の画面</h1>
+    <h1>推論用の画面</h1>
     <hr>
     <form method="POST">
         {% for col in col_names%}
         <label for={{col}}>{{col}}</label>
-        <input type="int" name="{{col}}"><br>
+        <input type="int" name="{{col}}" size="1"><br>
         {% endfor %}
         <br>
         <input type="submit" value="新規予測"><br>      
