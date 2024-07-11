@@ -75,7 +75,3 @@ def results():
     # 結果画面はGETしかないのでDBを更新して表示する
     posts = Post.query.all()
     return render_template("/results.html", posts=posts)
-
-## 実行
-if __name__ == "__main__":
-    app.run(debug=True)
