@@ -6,15 +6,14 @@
     <title>Document</title>
 </head>
 <body>
-    <h2>予測結果</h2>
-    {% for post in posts %}
+    <h2>モデル管理画面</h2>
+    {% for model in models %}
     <article>
         <hr>
-        <h2>結果 {{ post.id }} 回目</h2>
-        <p>モデル名：{{ post.model_name }}</p>
-        <p>予測値：{{ post.value }}</p>
-        <p>作成日時 : {{ post.created_at }}</p>
-        <a href="/{{post.id}}/delete">削除</a>
+        <h2>結果 {{ model.id }} 回目</h2>
+        <p>予測値：{{ model.model_name }}</p>
+        <p>作成日時 : {{ model.created_at }}</p>
+        <a href="/{{model.id}}/delete_model">削除</a>
     </article>
     {% endfor %}
     <br>

@@ -9,11 +9,20 @@
     <h1>推論用の画面</h1>
     <hr>
     <form method="POST">
+        <h3>説明変数の設定</h3>
         {% for col in col_names%}
         <label for={{col}}>{{col}}</label>
         <input type="int" name="{{col}}" size="1"><br>
         {% endfor %}
+        <hr>
+        <h3>モデルの選択</h3>
+        <select name="name">
+            {% for model in models %}
+                <option value="{{ model }}" >{{ model }}</option>
+            {% endfor %}
+        </select>
         <br>
+        <hr>
         <input type="submit" value="新規予測"><br>      
         <br>
         <a href="/" role="button">戻る</a>

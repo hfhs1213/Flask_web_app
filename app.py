@@ -22,8 +22,8 @@ y = df[config.TARGET]
 X = df[config.COLUMNS]
 col_names = X.columns
 
-def predict(parameters):
-    model = joblib.load('model/lgb_model.pkl')
+def predict(parameters, model_name):
+    model = joblib.load(f'model/{model_name}.pkl')
     params = parameters.reshape(1,-1)
     pred = model.predict(params)
     return pred
@@ -33,6 +33,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     value = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now(pytz.timezone("Asia/Tokyo")))
+    model_name = db.Column(db.String, nullable=False)
 
 class ModelResult(db.Model):
     __tablename__ = 'model_result'
@@ -49,6 +50,7 @@ def index():
 @app.route("/create", methods=["GET", "POST"])
 def create():
     if request.method == "POST":
+        model_name = request.form.get("name")
         # POST(value送信)の場合は推論して/にredirectする
         pred_list = []
         for col in col_names:
@@ -58,18 +60,23 @@ def create():
             pred_value = request.form.get(col)
             pred_list.append(pred_value)
         x = np.array(pred_list)
-        pred = predict(x)
+        pred = predict(x, model_name)
 
         # 予測をしたのでDBを更新する
         post = Post()  # インスタンス化
         post.value = pred
         post.created_at = datetime.now(pytz.timezone("Asia/Tokyo"))
+        post.model_name = model_name
         db.session.add(post)
         db.session.commit()
         return redirect("/")
     else:
         # GET(画面表示)の場合はcreate.htmlを表示するだけ
-        return render_template("/create.html", col_names=col_names)
+        model_result = ModelResult.query.all()
+        # import pdb; pdb.set_trace()
+        models = [model.model_name for model in model_result]
+        models.insert(0, "")  # 初期値を空白にしたい
+        return render_template("/create.html", col_names=col_names, models=models)
 
 @app.route('/<int:id>/delete', methods=["GET"])
 def delete(id):
@@ -94,22 +101,31 @@ def fit():
     else:
         param = request.form.get('radio')
         model_name = request.form.get('model_name')
-        print(model_name is None)
-        if model_name is "":
+        if model_name == "":
             flash("モデル名を入力してください！")
             return render_template("fit.html")
-        refit.fit_(X, y, param)
+        refit.fit_(X, y, param, model_name)
         flash(f"モデル名:[{model_name}]の学習が完了しました。")
         # DBに登録
         model_result = ModelResult()  # インスタンス化
         model_result.model_name = model_name
-        print(model_result.model_name)
-        print("aaaaaaaaaaaaaaaaaaa")
         model_result.created_at = datetime.now(pytz.timezone("Asia/Tokyo"))
-        print("bbbbbb")
         db.session.add(model_result)
-        print("ccccc")
         db.session.commit()
-        print("ddd")
         # 保存しただけなので表示したい
         return render_template("fit.html")
+    
+@app.route("/model_results", methods=["GET", "POST"])
+def model_results():
+    models = ModelResult.query.all()
+    # import pdb; pdb.set_trace()
+    return render_template("model_results.html", models=models)
+
+@app.route('/<int:id>/delete_model', methods=["GET"])
+def delete_model(id):
+    # 削除するidを取得してDBから削除する
+    model = ModelResult.query.get(id)
+    db.session.delete(model)
+    db.session.commit()
+    # 削除後は/resultsにルーティングする
+    return redirect("/model_results")
